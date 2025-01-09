@@ -18,4 +18,4 @@ const resolvers = gql`
         }
     }`;
 
-module.exports = resolvers;
+export default resolvers;

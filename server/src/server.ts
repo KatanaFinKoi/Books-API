@@ -1,25 +1,41 @@
 import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
 import typeDefs from './models/typeDefs';
 import resolvers from './models/resolvers';
+import { verifyToken } from './services/auth';
 
-const app = express();
+dotenv.config();
 
-const server = new ApolloServer({
+const startServer = async () => {
+  const app = express();
+
+  const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: ({ req }: { req: any }) => {
-        const token = req.headers.authorization || '';
-        return { token };
-    }
-});
+    context: ({ req }: { req: express.Request }) => {
+      const authHeader = req.headers.authorization || '';
+      const user = verifyToken(authHeader); 
+      return { user }; 
+    },
+  });
 
-server.applyMiddleware({ app });
+  await server.start(); 
 
-mongoose.connect('mongodb://localhost:27017/yourDB', { useNewUrlParser: true, useUnifiedTopology: true });
+  server.applyMiddleware({ app });
 
-app.listen({ port: 4000 }, () =>
-    console.log(`Server ready at http://localhost:4000${server.graphqlPath}`)
-);
+  const dbURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/yourDB';
+  mongoose
+    .connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch((err) => console.error('MongoDB connection error:', err));
+
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () =>
+    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
+  );
+};
+
+startServer();
