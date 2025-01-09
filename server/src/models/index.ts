@@ -1,3 +1,5 @@
 import User from './User';
+import resolvers from './resolvers';
+import { Book } from './typeDefs';
 
-export default { User };
+export { User, resolvers, Book };

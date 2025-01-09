@@ -3,8 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-import typeDefs from './models/typeDefs';
-import resolvers from './models/resolvers';
+import { User, resolvers, book } from './models/index'
 import { verifyToken } from './services/auth';
 
 dotenv.config();
