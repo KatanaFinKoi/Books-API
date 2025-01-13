@@ -23,7 +23,7 @@ interface Context {
 const getUserFromToken = (token: string): User | null => {
   try {
     if (token) {
-      return jwt.verify(token, process.env.JWT_SECRET || '') as User;
+      return jwt.verify(token, process.env.JWT_SECRET_KEY || '') as User;
     }
     return null;
   } catch (err) {

@@ -8,31 +8,33 @@ interface UserToken {
 
 // create a new class to instantiate for a user
 class AuthService {
-  // get user data
   getProfile() {
-    return jwtDecode(this.getToken() || '');
+    const profile = jwtDecode(this.getToken() || '');
+    console.log("User Profile:", profile);
+    return profile;
   }
+  
 
-  // check if user's logged in
   loggedIn() {
-    // Checks if there is a saved token and it's still valid
     const token = this.getToken();
-    return !!token && !this.isTokenExpired(token); // handwaiving here
+    console.log("Token:", token);
+    return !!token && !this.isTokenExpired(token);
   }
-
-  // check if token is expired
+  
   isTokenExpired(token: string) {
     try {
       const decoded = jwtDecode<UserToken>(token);
+      console.log("Decoded Token Expiration:", decoded.exp);
+      console.log("Current Time:", Date.now() / 1000);
       if (decoded.exp < Date.now() / 1000) {
         return true;
-      } 
-      
+      }
       return false;
     } catch (err) {
       return false;
     }
   }
+  
 
   getToken() {
     // Retrieves the user token from localStorage

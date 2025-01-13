@@ -1,4 +1,4 @@
-import { User } from './User';
+import User from './User';
 import { resolvers } from './resolvers';
 import { typeDefs } from './typeDefs';
 
