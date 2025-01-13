@@ -1,5 +1,6 @@
 import { jwtDecode } from 'jwt-decode';
 import { LOGIN_USER } from './mutations';
+import { client } from '../App';
 
 interface UserToken {
   name: string;
@@ -50,9 +51,9 @@ class AuthService {
     window.location.assign('/');
   }
 
-  async login(email: string, password: string, apolloClient: any) {
+  async login(email: string, password: string, client: any) {
     try {
-      const { data } = await apolloClient.mutate({
+      const { data } = await client.mutate({
         mutation: LOGIN_USER,
         variables: { email, password },
       });

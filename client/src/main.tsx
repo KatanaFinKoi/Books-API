@@ -5,7 +5,7 @@ import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm.js'
 import './App.css'
 
-import App from './App.jsx'
+import { App } from './App.jsx'
 import SearchBooks from './pages/SearchBooks'
 import SavedBooks from './pages/SavedBooks'
 
@@ -27,7 +27,7 @@ const router = createBrowserRouter([
         element: <LoginForm handleModalClose={() => { /* handle modal close logic */ }} />
       },
       {
-        path: '/signup',
+        path: '/signUp',
         element: <SignupForm handleModalClose={() => { /* handle modal close logic */ }} />
       }
     ]
