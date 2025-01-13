@@ -16,7 +16,8 @@ export interface UserDocument extends Document {
   password: string;
   savedBooks: Book[];
   isCorrectPassword(password: string): Promise<boolean>;
-  bookCount: number; // Virtual field
+  bookCount: number; 
+
 }
 
 const userSchema = new Schema<UserDocument>(

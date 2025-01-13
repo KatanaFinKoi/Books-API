@@ -1,6 +1,9 @@
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import LoginForm from './components/LoginForm'
+import SignupForm from './components/SignupForm.js'
+import './App.css'
 
 import App from './App.jsx'
 import SearchBooks from './pages/SearchBooks'
@@ -18,6 +21,14 @@ const router = createBrowserRouter([
       }, {
         path: '/saved',
         element: <SavedBooks />
+      },
+      {
+        path: '/login',
+        element: <LoginForm handleModalClose={() => { /* handle modal close logic */ }} />
+      },
+      {
+        path: '/signup',
+        element: <SignupForm handleModalClose={() => { /* handle modal close logic */ }} />
       }
     ]
   }

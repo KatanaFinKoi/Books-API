@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { useMutation } from '@apollo/client'; 
-import { ADD_USER } from '../utils/mutations'; 
+import { ADD_USER, LOGIN_USER } from '../utils/mutations'; 
 import Auth from '../utils/auth';
 import type { User } from '../models/User';
 
@@ -49,8 +49,9 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
       });
 
       if (data) {
-        const { token } = data.addUser;
-        Auth.login(token);
+        if (userFormData.username && userFormData.password) {
+          Auth.login(userFormData.username, userFormData.password, ADD_USER);
+        }
       }
     } catch (err) {
       console.error(err);

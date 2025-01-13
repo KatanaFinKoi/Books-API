@@ -2,12 +2,12 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { useMutation } from '@apollo/client'; 
-import { ADD_USER } from '../utils/mutations'; 
+import { LOGIN_USER } from '../utils/mutations'; 
 import Auth from '../utils/auth';
 import type { User } from '../models/User';
 
 // biome-ignore lint/correctness/noEmptyPattern: <explanation>
-const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
+const LoginForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
   // Set initial form state
   const [userFormData, setUserFormData] = useState<User>({
     username: '',
@@ -23,7 +23,7 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
   const [showAlert, setShowAlert] = useState(false);
 
   // Use Apollo's useMutation hook to execute ADD_USER mutation
-  const [addUser] = useMutation(ADD_USER);
+  const [loginUser] = useMutation(LOGIN_USER);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -42,7 +42,7 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
 
     try {
       // Execute ADD_USER mutation
-      const { data } = await addUser({
+      const { data } = await loginUser({
         variables: {
           username: userFormData.username,
           email: userFormData.email,
@@ -50,17 +50,17 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
         },
       });
 
-      // If the mutation was successful, extract the token and log the user in
       if (data) {
-        const { token } = data.addUser; // Assuming the mutation returns a token
-        Auth.login(token);
+        // const { token } = data.loginUser; 
+        if (userFormData.username && userFormData.password) {
+          Auth.login(userFormData.username, userFormData.password, LOGIN_USER);
+        }
       }
     } catch (err) {
       console.error(err);
-      setShowAlert(true); // Show an alert if something goes wrong
+      setShowAlert(true); 
     }
 
-    // Reset the form fields
     setUserFormData({
       username: '',
       email: '',
@@ -68,7 +68,7 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
       savedBooks: [],
     });
 
-    handleModalClose(); // Close the modal after successful signup (optional)
+    handleModalClose(); 
   };
 
   return (
@@ -77,7 +77,7 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
         {/* Show alert if server response is bad */}
         <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert} variant='danger'>
-          Something went wrong with your signup!
+          Something went wrong with your Login!
         </Alert>
 
         <Form.Group className='mb-3'>
@@ -129,4 +129,4 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
   );
 };
 
-export default SignupForm;
+export default LoginForm;

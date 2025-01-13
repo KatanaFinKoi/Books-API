@@ -1,5 +1,5 @@
-// use this to decode a token and get the user's information out of it
 import { jwtDecode } from 'jwt-decode';
+import { LOGIN_USER } from './mutations';
 
 interface UserToken {
   name: string;
@@ -22,7 +22,9 @@ class AuthService {
   loggedIn() {
     const token = this.getToken();
     console.log("Token:", token);
-    return !!token && !this.isTokenExpired(token);
+    const isLoggedIn = !!token && !this.isTokenExpired(token);
+    console.log("Is Logged In:", isLoggedIn);
+    return isLoggedIn;
   }
 
   isTokenExpired(token: string) {
@@ -47,6 +49,26 @@ class AuthService {
     localStorage.removeItem('id_token');
     window.location.assign('/');
   }
-}
+
+  async login(email: string, password: string, apolloClient: any) {
+    try {
+      const { data } = await apolloClient.mutate({
+        mutation: LOGIN_USER,
+        variables: { email, password },
+      });
+
+      if (data && data.login.token) {
+        localStorage.setItem('id_token', data.login.token);
+        return true;
+      }
+
+      throw new Error('Failed to log in');
+    } catch (error) {
+      console.error('Login Error:', error);
+      throw new Error('Failed to log in');
+    }
+  }
+};
+
 
 export default new AuthService();

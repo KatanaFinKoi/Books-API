@@ -1,61 +1,28 @@
+import express from 'express';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-import { Request } from 'express';
-dotenv.config();
+import User from '../models/User'; // Adjust the import based on your project structure
 
-interface JwtPayload {
-  exp: number;
-  _id: string;
-  username: string;
-  email: string;
-}
+const app = express();
+app.use(express.json());
 
-export const verifyToken = (authHeader: string | undefined): JwtPayload | null => {
-  if (!authHeader) {
-    console.error('Authorization header is missing.');
-    return null;
+const secret = 'your-secret-key';
+const expiresIn = '1h'; // Token expiration time
+
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  // Validate user credentials (use your own logic here)
+  const user = await User.findOne({ username });
+  if (!user || !(await user.isCorrectPassword(password))) {
+    return res.status(401).json({ message: 'Invalid credentials' });
   }
 
-  const token = authHeader.split(' ')[1]; 
+  // Generate a token
+  const payload = { name: user.username, id: user._id };
+  const token = jwt.sign(payload, secret, { expiresIn });
 
-  if (!token) {
-    console.error('Token is missing.');
-    return null;
-  }
+  // Send the token to the client
+  return res.json({ token });
+});
 
-  const secretKey = process.env.JWT_SECRET_KEY || '';
-
-  try {
-    const decoded = jwt.verify(token, secretKey) as JwtPayload;
-
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (decoded.exp && decoded.exp < currentTime) {
-      console.error('Token has expired.');
-      return null;
-    }
-
-    return decoded;
-  } catch (err) {
-    console.error('Token verification failed:', err);
-    return null; 
-  }
-};
-
-export const signToken = (username: string, email: string, _id: string): string => {
-  const payload = { username, email, _id };
-  const secretKey = process.env.JWT_SECRET_KEY || '';
-
-  return jwt.sign(payload, secretKey, { expiresIn: '1h' }); 
-};
-
-export const context = ({ req }: { req: Request }) => {
-  const authHeader = req.headers.authorization || null;
-
-  if (!authHeader) {
-    return { user: null };
-  }
-
-  const user = verifyToken(authHeader);
-
-  return { user };
-};
+export default app;
