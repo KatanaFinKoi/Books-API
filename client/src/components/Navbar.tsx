@@ -27,12 +27,14 @@ const AppNavbar = () => {
               {Auth.loggedIn() ? (
                 <>
                   <Nav.Link as={Link} to='/saved'>
-                    See Your Books
+                    Saved Books
                   </Nav.Link>
                   <Nav.Link onClick={Auth.logout}>Logout</Nav.Link>
                 </>
               ) : (
-                <Nav.Link onClick={() => setShowModal(true)}>Login/Sign Up</Nav.Link>
+                <>
+                  <Nav.Link onClick={() => setShowModal(true)}>Login</Nav.Link>
+                </>
               )}
             </Nav>
           </Navbar.Collapse>

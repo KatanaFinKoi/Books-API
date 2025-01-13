@@ -9,48 +9,42 @@ interface UserToken {
 // create a new class to instantiate for a user
 class AuthService {
   getProfile() {
-    const profile = jwtDecode(this.getToken() || '');
+    const token = this.getToken();
+    if (!token) {
+      console.log("No token found");
+      return null;
+    }
+    const profile = jwtDecode<UserToken>(token);
     console.log("User Profile:", profile);
     return profile;
   }
-  
 
   loggedIn() {
     const token = this.getToken();
     console.log("Token:", token);
     return !!token && !this.isTokenExpired(token);
   }
-  
+
   isTokenExpired(token: string) {
     try {
       const decoded = jwtDecode<UserToken>(token);
       console.log("Decoded Token Expiration:", decoded.exp);
       console.log("Current Time:", Date.now() / 1000);
-      if (decoded.exp < Date.now() / 1000) {
-        return true;
-      }
-      return false;
+      return decoded.exp < Date.now() / 1000;
     } catch (err) {
+      console.log("Error decoding token:", err);
       return false;
     }
   }
-  
 
   getToken() {
-    // Retrieves the user token from localStorage
+    // Retrieve the token from localStorage or cookies
     return localStorage.getItem('id_token');
-  }
-
-  login(idToken: string) {
-    // Saves user token to localStorage
-    localStorage.setItem('id_token', idToken);
-    window.location.assign('/');
   }
 
   logout() {
     // Clear user token and profile data from localStorage
     localStorage.removeItem('id_token');
-    // this will reload the page and reset the state of the application
     window.location.assign('/');
   }
 }

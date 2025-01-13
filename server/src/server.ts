@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 
-import { typeDefs, resolvers } from './models/index';
+import { typeDefs, resolvers } from './models/index.js';
 
 dotenv.config();
 

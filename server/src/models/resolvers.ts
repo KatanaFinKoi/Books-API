@@ -1,4 +1,4 @@
-import User from './User';
+import User from './User.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -58,4 +58,4 @@ export const resolvers = {
   },
 };
 
-module.exports = resolvers;
+export default resolvers;
