@@ -1,44 +1,61 @@
-// import { BookDocument } from './typeDefs';
-import { Book } from './typeDefs';
+import { User } from './User';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
-const resolvers = {
+export const resolvers = {
   Query: {
-    getBooks: async () => {
-      try {
-        return await Book.find();
-      } catch (err) {
-        throw new Error('Failed to fetch books');
-      }
-    },
-    getBook: async (_: unknown, { id }: { id: string }) => {
-      try {
-        return await Book.findById(id);
-      } catch (err) {
-        throw new Error('Book not found');
-      }
+    me: async (_: any, __: any, context: { user: { id: any; }; }) => {
+      if (!context.user) throw new Error('Not authenticated');
+      return await User.findById(context.user.id);
     },
   },
+
   Mutation: {
-    addBook: async (_: unknown, { title, authors, description }: { title: string; authors: string[]; description: string }) => {
-      try {
-        const newBook = new Book({ title, authors, description });
-        return await newBook.save();
-      } catch (err) {
-        throw new Error('Failed to add book');
-      }
+    login: async (_: any, { email, password }: { email: string; password: string }) => {
+      const user = await User.findOne({ email });
+      if (!user) throw new Error('User not found');
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) throw new Error('Invalid password');
+
+      if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not defined');
+      if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not defined');
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+      return { token, user };
     },
-    deleteBook: async (_: unknown, { id }: { id: string }) => {
-      try {
-        const deletedBook = await Book.findByIdAndDelete(id);
-        if (!deletedBook) {
-          throw new Error('Book not found');
-        }
-        return deletedBook;
-      } catch (err) {
-        throw new Error('Failed to delete book');
-      }
+
+    addUser: async (_: any, { username, email, password }: { username: string; email: string; password: string }) => {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await User.create({ username, email, password: hashedPassword });
+      if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not defined');
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+      return { token, user };
+    },
+
+    saveBook: async (_: any, { book }: { book: any }, context: { user: { id: any } }) => {
+      if (!context.user) throw new Error('Not authenticated');
+
+      const updatedUser = await User.findByIdAndUpdate(
+        context.user.id,
+        { $push: { savedBooks: book } },
+        { new: true }
+      );
+
+      return updatedUser;
+    },
+
+    removeBook: async (_: any, { bookId }: { bookId: string }, context: { user: { id: any } }) => {
+      if (!context.user) throw new Error('Not authenticated');
+
+      const updatedUser = await User.findByIdAndUpdate(
+        context.user.id,
+        { $pull: { savedBooks: { bookId } } },
+        { new: true }
+      );
+
+      return updatedUser;
     },
   },
 };
 
-export default resolvers;
+module.exports = resolvers;

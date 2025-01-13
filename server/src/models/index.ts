@@ -1,5 +1,5 @@
-import User from './User';
-import resolvers from './resolvers';
-import { Book } from './typeDefs';
+import { User } from './User';
+import { resolvers } from './resolvers';
+import { typeDefs } from './typeDefs';
 
-export { User, resolvers, Book };
+export { User, resolvers, typeDefs };

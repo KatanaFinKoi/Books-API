@@ -1,37 +1,47 @@
-import { Schema, model, type Document } from 'mongoose';
+import { gql } from 'apollo-server-express';
 
-// Define the interface for a Book document
-export interface BookDocument extends Document {
-  id: string;
-  title: string;
-  authors: string[];
-  description: string;
-}
-
-// Define the Book schema
-const bookSchema = new Schema<BookDocument>(
-  {
-    title: {
-      type: String,
-      required: true,
-    },
-    authors: {
-      type: [String], // An array of strings
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-  },
-  {
-    toJSON: {
-      virtuals: true, // Enables virtual fields when converting documents to JSON
-    },
+export const typeDefs = gql`
+  type Book {
+    authors: [String]
+    description: String
+    title: String
+    bookId: String
+    image: String
+    link: String
   }
-);
 
-// Export the Book model
-const Book = model<BookDocument>('Book', bookSchema);
+  type User {
+    id: ID
+    username: String
+    email: String
+    bookCount: Int
+    savedBooks: [Book]
+  }
 
-export { Book };
+  type Auth {
+    token: String
+    user: User
+  }
+
+  input BookInput {
+    authors: [String]
+    description: String
+    title: String
+    bookId: String
+    image: String
+    link: String
+  }
+
+  type Query {
+    me: User
+  }
+
+  type Mutation {
+    login(email: String!, password: String!): Auth
+    addUser(username: String!, email: String!, password: String!): Auth
+    saveBook(book: BookInput!): User
+    removeBook(bookId: String!): User
+  }
+`;
+
+module.exports = typeDefs;

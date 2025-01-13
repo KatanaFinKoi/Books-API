@@ -1,40 +1,70 @@
-import { ApolloServer } from 'apollo-server-express';
-import express from 'express';
+import express, { Application, Request } from 'express';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import bodyParser from 'body-parser';
+import cors from 'cors';
 
-import { User, resolvers, book } from './models/index'
-import { verifyToken } from './services/auth';
+import { typeDefs, resolvers } from './models/index';
 
 dotenv.config();
 
-const startServer = async () => {
-  const app = express();
+interface User {
+  id: string;
+  email: string;
+}
 
-  const server = new ApolloServer({
+interface Context {
+  user?: User | null;
+}
+
+const getUserFromToken = (token: string): User | null => {
+  try {
+    if (token) {
+      return jwt.verify(token, process.env.JWT_SECRET || '') as User;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+};
+
+const startServer = async () => {
+  const app: Application = express();
+
+  const server = new ApolloServer<Context>({
     typeDefs,
     resolvers,
-    context: ({ req }: { req: express.Request }) => {
-      const authHeader = req.headers.authorization || '';
-      const user = verifyToken(authHeader); 
-      return { user }; 
-    },
   });
 
-  await server.start(); 
+  await server.start();
 
-  server.applyMiddleware({ app });
+  app.use(
+    '/graphql',
+    cors(),
+    bodyParser.json(),
+    expressMiddleware(server, {
+      context: async ({ req }: { req: Request }): Promise<Context> => {
+        const token = req.headers.authorization || '';
+        const user = getUserFromToken(token);
+        return { user };
+      },
+    })
+  );
 
-  const dbURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/yourDB';
+  const dbURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/googlebooks';
   mongoose
-    .connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected successfully'))
+    .connect(dbURI)
+    .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
   const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () =>
-    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
-  );
+
+  app.listen(PORT, () => {
+    console.log(`Server ready at http://localhost:${PORT}/graphql`);
+  });
 };
 
 startServer();
