@@ -1,22 +1,30 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 
-const bookSchema = new Schema({
-  authors: [String],
-  description: String,
-  title: String,
-  bookId: String,
-  image: String,
-  link: String,
-});
+export interface Book {
+  bookId: string;
+  authors: string[];
+  description: string;
+  title: string;
+  image: string;
+  link: string;
+}
 
-const userSchema = new Schema(
+export interface UserDocument extends Document {
+  username: string;
+  email: string;
+  password: string;
+  savedBooks: Book[];
+  isCorrectPassword(password: string): Promise<boolean>;
+  bookCount: number; // Virtual field
+}
+
+const userSchema = new Schema<UserDocument>(
   {
     username: {
       type: String,
       required: true,
       unique: true,
-      trim: true,
     },
     email: {
       type: String,
@@ -28,26 +36,43 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    savedBooks: [bookSchema], // Embedded schema for saved books
+    savedBooks: [
+      {
+        bookId: { type: String, required: true },
+        authors: { type: [String], required: true },
+        description: { type: String },
+        title: { type: String, required: true },
+        image: { type: String },
+        link: { type: String },
+      },
+    ],
   },
   {
     toJSON: {
       virtuals: true,
     },
+    toObject: {
+      virtuals: true, 
+    },
   }
 );
 
-// Virtual to calculate the number of saved books
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password') || this.isNew) {
+    const saltRounds = 10;
+    this.password = await bcrypt.hash(this.password, saltRounds);
+  }
+  next();
+});
+
+userSchema.methods.isCorrectPassword = async function (password: string): Promise<boolean> {
+  return bcrypt.compare(password, this.password);
+};
+
 userSchema.virtual('bookCount').get(function () {
   return this.savedBooks.length;
 });
 
-userSchema.methods.isCorrectPassword = async function (password: string) {
+const User = model<UserDocument>('User', userSchema);
 
-  return bcrypt.compare(password, this.password);
-
-};
-
-export const User = model('User', userSchema);
-
-module.exports = User;
+export default User;

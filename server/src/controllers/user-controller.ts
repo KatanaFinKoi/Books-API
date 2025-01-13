@@ -1,75 +1,79 @@
-import type { Request, Response } from 'express';
-// import user model
-import User from '../models/User.js';
-// import sign token function from auth
-import { signToken } from '../services/auth.js';
+import { Schema, model, Document } from 'mongoose';
+import bcrypt from 'bcrypt';
 
-// get a single user by either their id or their username
-export const getSingleUser = async (req: Request, res: Response) => {
-  const foundUser = await User.findOne({
-    $or: [{ _id: req.user ? req.user._id : req.params.id }, { username: req.params.username }],
-  });
+export interface Book {
+  bookId: string; 
+  authors: string[]; 
+  description: string; 
+  title: string; 
+  image: string;
+  link: string; 
+}
 
-  if (!foundUser) {
-    return res.status(400).json({ message: 'Cannot find a user with this id!' });
+export interface UserDocument extends Document {
+  username: string;
+  email: string;
+  password: string;
+  savedBooks: Book[]; 
+  isCorrectPassword(password: string): Promise<boolean>;
+  bookCount: number; 
+}
+
+const userSchema = new Schema<UserDocument>(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      match: [/.+@.+\..+/, 'Must use a valid email address'],
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+
+    savedBooks: [
+      {
+        bookId: { type: String, required: true },
+        authors: { type: [String], required: true },
+        description: { type: String },
+        title: { type: String, required: true },
+        image: { type: String },
+        link: { type: String },
+      },
+    ],
+  },
+  {
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
   }
+);
 
-  return res.json(foundUser);
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password') || this.isNew) {
+    const saltRounds = 10;
+    this.password = await bcrypt.hash(this.password, saltRounds);
+  }
+  next();
+});
+
+userSchema.methods.isCorrectPassword = async function (password: string): Promise<boolean> {
+  return bcrypt.compare(password, this.password);
 };
 
-// create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
-export const createUser = async (req: Request, res: Response) => {
-  const user = await User.create(req.body);
+userSchema.virtual('bookCount').get(function () {
+  return this.savedBooks.length;
+});
 
-  if (!user) {
-    return res.status(400).json({ message: 'Something is wrong!' });
-  }
-  const token = signToken(user.username, user.password, user._id);
-  return res.json({ token, user });
-};
+const User = model<UserDocument>('User', userSchema);
 
-// login a user, sign a token, and send it back (to client/src/components/LoginForm.js)
-// {body} is destructured req.body
-export const login = async (req: Request, res: Response) => {
-  const user = await User.findOne({ $or: [{ username: req.body.username }, { email: req.body.email }] });
-  if (!user) {
-    return res.status(400).json({ message: "Can't find this user" });
-  }
-
-  const correctPw = await user.isCorrectPassword(req.body.password);
-
-  if (!correctPw) {
-    return res.status(400).json({ message: 'Wrong password!' });
-  }
-  const token = signToken(user.username, user.password, user._id);
-  return res.json({ token, user });
-};
-
-// save a book to a user's `savedBooks` field by adding it to the set (to prevent duplicates)
-// user comes from `req.user` created in the auth middleware function
-export const saveBook = async (req: Request, res: Response) => {
-  try {
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: req.user._id },
-      { $addToSet: { savedBooks: req.body } },
-      { new: true, runValidators: true }
-    );
-    return res.json(updatedUser);
-  } catch (err) {
-    console.log(err);
-    return res.status(400).json(err);
-  }
-};
-
-// remove a book from `savedBooks`
-export const deleteBook = async (req: Request, res: Response) => {
-  const updatedUser = await User.findOneAndUpdate(
-    { _id: req.user._id },
-    { $pull: { savedBooks: { bookId: req.params.bookId } } },
-    { new: true }
-  );
-  if (!updatedUser) {
-    return res.status(404).json({ message: "Couldn't find user with this id!" });
-  }
-  return res.json(updatedUser);
-};
+export default User;
