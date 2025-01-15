@@ -52,8 +52,8 @@ const LoginForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
 
       if (data) {
         // const { token } = data.loginUser; 
-        if (userFormData.username && userFormData.password) {
-          Auth.login(userFormData.username, userFormData.password, LOGIN_USER);
+        if (userFormData.username && userFormData.password && userFormData.email) {
+          Auth.login(data.login.token);
         }
       }
     } catch (err) {

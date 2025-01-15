@@ -5,7 +5,7 @@ import { GET_ME } from '../utils/queries';
 import { REMOVE_BOOK } from '../utils/mutations'; 
 import { removeBookId } from '../utils/localStorage';
 import Auth from '../utils/auth';
-import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from 'react';
+// import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from 'react';
 
 const SavedBooks = () => {
 
@@ -59,7 +59,7 @@ const SavedBooks = () => {
             : 'You have no saved books!'}
         </h2>
         <Row>
-          {userData?.savedBooks.map((book: { bookId: string; image: string | undefined; title: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined; authors: any[]; description: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined; }) => {
+          {userData?.savedBooks.map((book: { bookId: string; image: string | undefined; title: string | number | boolean | null | undefined; authors: any[]; description: string | number | boolean | null | undefined; }) => {
             return (
               <Col md='4' key={book.bookId}>
                 <Card border='dark'>

@@ -59,38 +59,29 @@ const SearchBooks = () => {
   };
 
   // Create function to handle saving a book to our database using the Apollo mutation
-  const handleSaveBook = async (bookId: string) => {
-    // Find the book in `searchedBooks` state by the matching ID
-    const bookToSave: Book = searchedBooks.find((book) => book.bookId === bookId)!;
+const handleSaveBook = async (bookId: string) => {
+  const bookToSave: Book = searchedBooks.find((book) => book.bookId === bookId)!;
+  try {
+    // Execute the SAVE_BOOK mutation
+    const { data } = await saveBook({
+      variables: {
+        bookId: bookToSave.bookId || '',
+        authors: bookToSave.authors || '',
+        description: bookToSave.description || '', // Handle optional fields with default values
+        title: bookToSave.title || '',
+        image: bookToSave.image || '',
+        link: bookToSave.link || '',
+      },
+    });
 
-    // Get token
-    const token = Auth.loggedIn() ? Auth.getToken() : null;
-
-    if (!token) {
-      return false;
+    // If mutation was successful, update the savedBookIds state
+    if (data) {
+      setSavedBookIds([...savedBookIds, bookToSave.bookId]);
     }
-
-    try {
-      // Execute the SAVE_BOOK mutation
-      const { data } = await saveBook({
-        variables: {
-          authors: bookToSave.authors,
-          description: bookToSave.description,
-          title: bookToSave.title,
-          bookId: bookToSave.bookId,
-          image: bookToSave.image,
-          link: bookToSave.link || '', // Link is optional; use empty string if not available
-        },
-      });
-
-      // If mutation was successful, update the savedBookIds state
-      if (data) {
-        setSavedBookIds([...savedBookIds, bookToSave.bookId]);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  } catch (err) {
+    console.error('Error saving the book:', err);
+  }
+};
 
   return (
     <>

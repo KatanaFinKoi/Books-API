@@ -49,8 +49,8 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
       });
 
       if (data) {
-        if (userFormData.username && userFormData.password) {
-          Auth.login(userFormData.username, userFormData.password, ADD_USER);
+        if (userFormData.username && userFormData.password && userFormData.email) {
+          Auth.login(data.addUser.token);
         }
       }
     } catch (err) {

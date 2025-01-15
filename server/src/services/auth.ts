@@ -1,59 +1,50 @@
-import express from 'express';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import User from '../models/User'; // Adjust the import based on your project structure
+import { GraphQLError } from 'graphql';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const app = express();
-app.use(express.json());
 
-const secret = 'your-secret-key';
-const expiresIn = '1h'; // Token expiration time
+export const authenticateToken = ({ req }: any) => {
+  // Allows token to be sent via req.body, req.query, or headers
+  let token = req.body.token || req.query.token || req.headers.authorization;
 
-// User registration endpoint
-app.post('/signUp', async (req, res) => {
-  const { email, password, username } = req.body;
-
-  // Hash the password before saving it to the database
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create a new user with the hashed password
-  const newUser = new User({
-    email,
-    password: hashedPassword,
-    username,
-  });
-
-  await newUser.save();
-
-  res.status(201).json({ message: 'User registered successfully' });
-});
-
-// User login endpoint
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  // Validate user credentials
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  } else {
-    console.log('User found:', user);
+  // If the token is sent in the authorization header, extract the token from the header
+  if (req.headers.authorization) {
+    token = token.split(' ').pop().trim();
   }
 
-  // Compare the provided password with the stored hashed password
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  } else {
-    console.log('Password is valid');
+  // If no token is provided, return the request object as is
+  if (!token) {
+    return req;
   }
 
-  // Generate a token
-  const payload = { name: user.username, id: user._id };
-  const token = jwt.sign(payload, secret, { expiresIn });
+  // Try to verify the token
+  try {
+    const { data }: any = jwt.verify(token, process.env.JWT_SECRET_KEY || '', { maxAge: '2hr' });
+    // If the token is valid, attach the user data to the request object
+    req.user = data;
+  } catch (err) {
+    // If the token is invalid, log an error message
+    console.log('Invalid token');
+  }
 
-  // Send the token to the client
-  return res.json({ token });
-});
+  // Return the request object
+  return req;
+};
 
-export default app;
+export const signToken = (username: string, email: string, _id: unknown) => {
+  // Create a payload with the user information
+  const payload = { username, email, _id };
+  const secretKey: any = process.env.JWT_SECRET_KEY; // Get the secret key from environment variables
+
+  // Sign the token with the payload and secret key, and set it to expire in 2 hours
+  return jwt.sign({ data: payload }, secretKey, { expiresIn: '2h' });
+};
+
+export class AuthenticationError extends GraphQLError {
+  constructor(message: string) {
+    super(message, undefined, undefined, undefined, ['UNAUTHENTICATED']);
+    Object.defineProperty(this, 'name', { value: 'AuthenticationError' });
+  }
+};
+
